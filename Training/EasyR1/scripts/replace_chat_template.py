@@ -2,16 +2,13 @@
 
 Usage:
     python scripts/replace_chat_template.py <checkpoint_dir> [--template <chat_template.json>]
-
-Example:
-    python scripts/replace_chat_template.py /scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/EasyR1_qwen3_Modify/checkpoints/easy_r1/qwen3_8B_instruct_aug_logits_v2/global_step_400/actor/huggingface_400
 """
 
 import argparse
 import json
 import os
 
-DEFAULT_TEMPLATE = "/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Qwen3-VL-8B-Thinking/chat_template.json"
+DEFAULT_TEMPLATE = "./examples/chat_template.json"
 
 
 def main():

@@ -13,7 +13,7 @@ set -x
 
 # Needed for outbound connectivity (e.g., WandB) on this cluster
 module load proxy/default
-export WANDB_API_KEY="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"
+export WANDB_API_KEY="<YOUR_WANDB_API_KEY>"
 
 # Print job information
 echo "Job ID: $SLURM_JOB_ID"
@@ -25,14 +25,16 @@ export WANDB_CACHE_DIR="${SLURM_TMPDIR:-$PWD}/.cache/wandb"
 export WANDB_CONFIG_DIR="${SLURM_TMPDIR:-$PWD}/.config/wandb"
 mkdir -p "$WANDB_DIR" "$WANDB_CACHE_DIR" "$WANDB_CONFIG_DIR"
 
-MODEL_PATH=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Qwen3-VL-8B-Instruct
-# Use Thinking model's chat template so outputs follow the <think>...</think> format
-THINKING_CHAT_TEMPLATE=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Qwen3-VL-8B-Thinking/chat_template.json
+MODEL_PATH=<PATH_TO_Qwen3-VL-8B-Instruct>
+TRAIN_FILES=<PATH_TO_TRAIN_DATA>.jsonl
+VAL_FILES=<PATH_TO_VAL_DATA>.jsonl
+# Thinking model's chat template (shipped alongside this script)
+THINKING_CHAT_TEMPLATE=examples/chat_template.json
 
 python3 -m verl.trainer.main \
     config=examples/config.yaml \
-    data.train_files=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/DataGen/DataSource/rl_gt_qwen3_aug.jsonl\
-    data.val_files=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/DataGen/DataSource/val_gt_v3.jsonl \
+    data.train_files=${TRAIN_FILES} \
+    data.val_files=${VAL_FILES} \
     data.override_chat_template=${THINKING_CHAT_TEMPLATE} \
     worker.actor.model.model_path=${MODEL_PATH} \
     trainer.experiment_name=qwen3_8B_instruct_aug_logits \
