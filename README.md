@@ -1,73 +1,77 @@
-# ContextAwareRL
+# Official Repo for "Context-Aware RL for Agentic and Multimodal LLMs"
 
-Context-aware reinforcement learning training for vision-language models. Based on [EasyR1/verl](https://github.com/), with GRPO algorithm and image-selection-aware reward shaping (`choose_image_coef` / `choose_image_clip`).
+This repository contains the official code for the paper **"Context-Aware RL for Agentic and Multimodal LLMs"**. We provide a context-aware reinforcement learning (RL) recipe and apply it to two settings:
 
-Two sub-projects targeting different base models:
+- **Multimodal LLMs** — vision-language reasoning where the model must learn *which image(s)* to attend to (image-selection-aware reward, `choose_image_coef` / `choose_image_clip`). Built on [EasyR1 / verl](https://github.com/hiyouga/EasyR1).
+- **Agentic LLMs** — long-horizon, tool-using agents (e.g. SWE-bench-style code repair) trained with contrastive context pairs. Built on [SkyRL](https://github.com/NovaSky-AI/SkyRL).
+
+```
+Code/
+├── DataPreparation/   # Prepare RL training data
+├── Training/          # Training code and scripts for multimodal and agentic models
+└── Evaluation/        # benchmark evaluation for both tracks
+```
 
 ---
 
-## EasyR1_Qwen2_5 (Qwen2.5-VL-7B-Instruct)
+## Table of Contents
 
-### Setup
+1. [Environment Setup](#1-environment-setup)
+2. [Data Preparation](#2-data-preparation)
+3. [Training](#3-training)
+4. [Evaluation](#4-evaluation)
+5. [Citation](#5-citation)
 
-```bash
-cd EasyR1_Qwen2_5
-pip install -e .
-```
+---
 
-### Training
+## 1. Environment Setup
 
-```bash
-# Full training
-sbatch examples/qwen_V2_5_aug.sh
+We recommend Python 3.10+ and CUDA 12.x. Create a separate environment per track.
 
-# Quick sanity check (30 steps, ~1h)
-sbatch examples/qwen_V2_5_aug_test.sh
-```
-
-### Post-training: Merge Model Shards
-
-Training saves FSDP-sharded checkpoints (`model_world_size_*_rank_*.pt`). You must merge them into a single HuggingFace model before inference:
+### Multimodal (EasyR1 / verl)
 
 ```bash
-python scripts/model_merger.py --local_dir <checkpoint_step_dir>
+
 ```
 
-
-## EasyR1_Qwen3 (Qwen3-VL-8B-Instruct)
-
-### Setup
+### Agentic (SkyRL)
 
 ```bash
-cd EasyR1_Qwen3
-pip install -e .
+
 ```
 
-### Training
+> **Hardware.** Experiments were run on multi-GPU nodes (A100/H100 80GB) via Slurm. The provided launch scripts (`sbatch ...`) assume a Slurm cluster; adapt the resource directives at the top of each script to your environment.
 
-```bash
-# Full training
-sbatch examples/qwen_V3_aug.sh
+---
 
-# Quick sanity check (30 steps, ~1h)
-sbatch examples/qwen_V3_aug_test.sh
+## 2. Data Preparation
+
+### 2.1 Multimodal
+
+
+
+### 2.2 Agentic
+
+
+
+---
+
+## 3. Training
+
+TODO
+
+---
+
+## 4. Evaluation
+
+TODO
+
+---
+
+## 5. Citation
+
+If you find this work useful, please cite:
+
+```bibtex
+
 ```
-
-### Post-training Step 1: Merge Model Shards
-
-Same as Qwen2.5 — merge FSDP shards into a HuggingFace model:
-
-```bash
-python scripts/model_merger.py --local_dir <checkpoint_step_dir>
-```
-
-### Post-training Step 2: Replace Chat Template (Qwen3 only)
-
-After merging, the checkpoint still contains the original Instruct chat template. You **must** replace it with the Thinking model's template before deployment/inference:
-
-```bash
-python scripts/replace_chat_template.py <merged_huggingface_dir>
-```
-
-This updates `chat_template.jinja` and the `chat_template` field in `tokenizer_config.json` so inference uses the `<think>...</think>` format.
-
