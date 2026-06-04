@@ -1,0 +1,5 @@
+rm -rf /scratch/gpfs/PMITTAL/peiyang/px4668/.cache/uv/builds-v0/.tmp*
+
+                                                                                                                                                                          
+find /scratch/gpfs/PMITTAL/peiyang/px4668/.cache/uv/builds-v0/ -maxdepth 1 -name '.tmp*' -type d ! -newermt '2026-04-07 18:00:00' -exec rm -rf {} +                                                                                                                                   
+          

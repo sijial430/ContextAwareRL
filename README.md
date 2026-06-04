@@ -189,7 +189,82 @@ The resulting model is ready for [Evaluation](#4-evaluation).
 
 ### 3.2 Agentic
 
-TODO
+The agentic track is trained with our customized [SkyRL](https://github.com/NovaSky-AI/SkyRL) under `Training/SkyRL`. In the paper we use two backbones, **Klear-AgentForge-8B-SFT** and **Qwen3-8B**. Both are trained with colocated GRPO + a choose-trajectory (CT) auxiliary loss on SWE-Bench-style code-repair tasks, executed inside per-instance Apptainer sandboxes.
+
+#### Step 1 — Download the base model
+
+Download the backbone(s) from the Hugging Face Hub. The paths below match the `trainer.policy.model.path` used in the training scripts; adjust them to your own layout if needed.
+
+```bash
+# Klear-AgentForge-8B-SFT
+huggingface-cli download Kwai-Klear/Klear-AgentForge-8B-SFT --local-dir ./Klear-AgentForge-8B-SFT
+
+# Qwen3-8B
+huggingface-cli download Qwen/Qwen3-8B --local-dir ./Qwen3-8B
+```
+
+#### Step 2 — Prepare the data
+
+Follow [Section 2.2](#22-agentic) to download the RL training data and build the Apptainer execution sandboxes.
+
+#### Step 3 — Configure the environment file and sandbox paths
+
+The training scripts source `examples/train/mini_swe_agent/.env.miniswe` before starting Ray so that all workers inherit the LiteLLM and OpenAI-proxy settings. A ready-to-use template is already in place; the defaults (`OPENAI_BASE_URL`, `LITELLM_MODEL_REGISTRY_PATH`) work without modification as long as you follow the standard setup.
+
+The Apptainer image directories for the sandboxes are configured separately in `examples/train/mini_swe_agent/swebench.yaml`. Set `local_sif_dir` to the directory where you pulled the `.sif` files in Section 2.2:
+
+```yaml
+environment:
+  local_sif_dir:
+    - /path/to/swe_gym_images    # directory containing SWE-Gym .sif files
+    - /path/to/swe_smith_images  # directory containing SWE-Smith .sif files
+```
+
+#### Step 4 — Launch RL training
+
+We provide one launch script per backbone under `Training/SkyRL/examples/train/mini_swe_agent/`:
+
+- `run_mini_swe_agentforge8B.sh` — Klear-AgentForge-8B-SFT (trained on SWE-Gym + SWE-Smith)
+- `run_mini_swe_qwen3_8b.sh` — Qwen3-8B (trained on SWE-Gym)
+
+Before submitting, set the following variables at the top of each script to match your environment:
+
+| Variable                                                   | Description                                     |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| `trainer.policy.model.path`                                | Base model directory from Step 1                |
+| `GYM_DIR` / `SMITH_DIR` (agentforge) or `DATA_DIR` (qwen3) | RL training data directories from Step 2        |
+| `CT_DATA`                                                  | Path to the CT `eval_prompts.jsonl` from Step 2 |
+| `CKPT_PATH` / `EXPORT_PATH` / `MINISWE_TRAJ_DIR`           | Output directories (relative defaults provided) |
+| `WANDB_API_KEY`                                            | Your Weights & Biases API key                   |
+
+Submit on a Slurm cluster:
+
+```bash
+cd Training/SkyRL
+
+# Klear-AgentForge-8B-SFT
+sbatch examples/train/mini_swe_agent/run_mini_swe_agentforge8B.sh
+
+# Qwen3-8B
+sbatch examples/train/mini_swe_agent/run_mini_swe_qwen3_8b.sh
+```
+
+Checkpoints are written to `CKPT_PATH/global_step_<N>/`.
+
+#### Step 5 — Merge the checkpoint into a Hugging Face model
+
+Training saves sharded FSDP2 weights (`model_world_size_*_rank_*.pt`) under each `global_step_<N>/policy/`. Use `merge_fsdp_ckpt_to_hf.py` at the root of `Training/SkyRL/` to consolidate them into a standard Hugging Face model directory that can be loaded directly for inference:
+
+```bash
+cd Training/SkyRL
+
+python merge_fsdp_ckpt_to_hf.py \
+  --ckpt <CKPT_PATH>/global_step_<N>/policy \
+  --out  exports/<experiment_name>_step<N>_hf \
+  --dtype bfloat16
+```
+
+The merged model is written to the `--out` directory and is ready for [Evaluation](#4-evaluation).
 
 ---
 
