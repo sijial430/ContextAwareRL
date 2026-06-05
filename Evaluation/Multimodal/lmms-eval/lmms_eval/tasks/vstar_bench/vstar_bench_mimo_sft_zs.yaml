@@ -1,0 +1,6 @@
+include: vstar_bench_qwen3_thinking_zs.yaml
+task: "vstar_bench_mimo_sft_zs"
+generation_kwargs:
+  max_new_tokens: 32768
+  temperature: 0.0
+  do_sample: false

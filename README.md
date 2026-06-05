@@ -270,7 +270,267 @@ The merged model is written to the `--out` directory and is ready for [Evaluatio
 
 ## 4. Evaluation
 
-TODO
+### 4.1 Multimodal
+
+We use two evaluation toolkits: **VLMEvalKit** and **lmms-eval**. The subsections below cover each in turn.
+
+#### 4.1.1 VLMEvalKit
+
+Evaluation code lives under `Evaluation/Multimodal/VLMEval/`.
+
+**Step 1 — Environment setup and dataset download**
+
+Follow the official VLMEvalKit repository for installation and dataset preparation:
+[https://github.com/open-compass/VLMEvalKit](https://github.com/open-compass/VLMEvalKit)
+
+Set the `LMUData` environment variable to the directory where you have downloaded the benchmark data.
+
+**Step 2 — Register your model path**
+
+Open `Evaluation/Multimodal/VLMEval/vlmeval/config.py` and add an entry for your merged checkpoint inside the appropriate model series dict (e.g. `qwen2vl_series` for Qwen2.5-VL, `qwen3vl_series` for Qwen3-VL). The key must match the model name used in the eval scripts.
+
+For example, for Qwen2.5-VL-7B add to `qwen2vl_series`:
+
+```python
+"Qwen2.5-VL-7B-Best": partial(
+    Qwen2VLChat,
+    model_path="/path/to/your/merged/qwen2.5vl-7b-checkpoint",
+    min_pixels=1280 * 28 * 28,
+    max_pixels=16384 * 28 * 28,
+    use_custom_prompt=False,
+),
+```
+
+For Qwen3-VL-8B add to `qwen3vl_series`:
+
+```python
+"Qwen3-VL-8B-Best": partial(
+    Qwen3VLChat,
+    model_path="/path/to/your/merged/qwen3vl-8b-checkpoint",
+    use_custom_prompt=False,
+    use_vllm=True,
+    temperature=0.0,
+    max_new_tokens=32768,
+),
+```
+
+**Step 3 — Run evaluation**
+
+We provide two ready-to-submit Slurm scripts. Before submitting, set `OPENAI_API_KEY` (required for judge-based metrics) and `LMUData` at the top of each script.
+
+```bash
+cd Evaluation/Multimodal/VLMEval
+
+# Qwen2.5-VL-7B-Instruct backbone
+# Benchmarks: MathVista_MINI, MathVerse_MINI, MathVision, MMMU_DEV_VAL,
+#             MMMU_Pro_10c, VStarBench, MMStar, BLINK
+bash eval_qwen25.sh
+
+# Qwen3-VL-8B-Instruct backbone
+# Benchmarks: MathVerse_MINI, MathVision, MMMU_DEV_VAL,
+#             MMMU_Pro_10c, MMStar, BLINK
+bash eval_qwen3.sh
+```
+
+Each script submits one Slurm job per model. Results are written by VLMEvalKit to the working directory (`.xlsx` / `.csv` files).
+
+#### 4.1.2 lmms-eval
+
+Evaluation code lives under `Evaluation/Multimodal/lmms-eval/`.
+
+**Step 1 — Environment setup and dataset download**
+
+Follow the official lmms-eval repository for installation and dataset preparation:
+[https://github.com/EvolvingLMMs-Lab/lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval)
+
+Download the required benchmark datasets and point `LMMS_EVAL_HOME` to their cache directory (the scripts default it to `<WORK_DIR>/cache`).
+
+**Step 2 — Run evaluation**
+
+Both scripts are written as Slurm batch scripts and accept `MODEL_PATH` and `RUN_NAME` via `--export`. Set `OPENAI_API_KEY` in your environment before submitting (required for judge-based metrics).
+
+```bash
+cd Evaluation/Multimodal/lmms-eval
+
+# Qwen2.5-VL-7B-Instruct backbone
+# Benchmarks: ScienceQA-IMG, MME-RealWorld-Lite, OlympiadBench (physics),
+#             PhyX-MC
+sbatch --export=ALL,MODEL_PATH=/path/to/merged/qwen2.5vl-7b,RUN_NAME=qwen25_best \
+    eval_qwen25.sh
+
+# Qwen3-VL-8B-Instruct backbone
+# Benchmarks: ScienceQA-IMG, MME-RealWorld-Lite, OlympiadBench (physics),
+#             PhyX-MC, MathVista-testmini, VStarBench
+sbatch --export=ALL,MODEL_PATH=/path/to/merged/qwen3vl-8b,RUN_NAME=qwen3_best \
+    eval_qwen3.sh
+```
+
+Results are written to `eval_results/<RUN_NAME>/` inside the `lmms-eval` directory.
+
+### 4.2 Agentic
+
+#### 4.2.1 SWE-Bench Evaluation
+
+Evaluation code lives under `Evaluation/Agentic/SWE-Bench/`. We evaluate on two splits: **SWE-bench Verified** (500 instances) and **SWE-bench Lite** (300 instances).
+
+**Environment setup and benchmark download**
+
+Follow the official SWE-bench repository:
+[https://github.com/swe-bench/SWE-bench](https://github.com/swe-bench/SWE-bench)
+
+---
+
+**Step 1 — Build instance sandboxes**
+
+Each instance runs inside an isolated Apptainer sandbox. Build all sandboxes:
+
+```bash
+cd Evaluation/Agentic/SWE-Bench
+
+# SWE-bench Lite (300 instances)
+SANDBOX_DIR=/path/to/sandboxes bash scripts/build_instance_sandboxes_swe_lite.sh
+
+# SWE-bench Verified (500 instances)
+SANDBOX_DIR=/path/to/sandboxes bash scripts/build_instance_sandboxes_swe_verified.sh
+```
+
+Sandboxes are written to `$SANDBOX_DIR/sweb.eval.x86_64.<instance_id>__latest/`.
+
+---
+
+**Step 2 — Run inference**
+
+Inference uses **mini-swe-agent** backed by a local vLLM server. The agent config (`swebench_klear.yaml`) applies the prompt template used during training. Required environment variables:
+
+| Variable          | Description                                                  |
+| ----------------- | ------------------------------------------------------------ |
+| `MODEL_PATH`      | Path to your merged HF model checkpoint                      |
+| `SANDBOX_DIR`     | Directory containing the built instance sandboxes from Step 1 |
+| `OUTPUT_DIR`      | Where predictions (`preds.json`) are written (default: `<WORK_DIR>/output_swe_<split>`) |
+| `OPENAI_API_KEY`  | API key (passed to mini-swe-agent; a dummy key is fine for local vLLM) |
+| `VLLM_MODEL_NAME` | Served model alias (default: basename of `MODEL_PATH`)       |
+| `NUM_WORKERS`     | Parallel agent workers (default: `1`)                        |
+
+```bash
+cd Evaluation/Agentic/SWE-Bench
+
+# SWE-bench Lite
+sbatch --export=ALL,MODEL_PATH=/path/to/model,SANDBOX_DIR=/path/to/sandboxes \
+    scripts/inference_swe_lite.slurm
+
+# SWE-bench Verified
+sbatch --export=ALL,MODEL_PATH=/path/to/model,SANDBOX_DIR=/path/to/sandboxes \
+    scripts/inference_swe_verified.slurm
+```
+
+Predictions are saved to `$OUTPUT_DIR/preds.json` and per-instance trajectories to `$OUTPUT_DIR/<instance_id>/<instance_id>.traj.json`.
+
+---
+
+**Step 3 — Score predictions**
+
+Pass the `preds.json` produced in Step 2 to the SWE-bench harness:
+
+| Variable           | Description                                                  |
+| ------------------ | ------------------------------------------------------------ |
+| `PREDICTIONS_PATH` | Path to `preds.json` from Step 2                             |
+| `SANDBOX_DIR`      | Same sandbox directory as Step 1                             |
+| `RUN_ID`           | Identifier for this evaluation run (used to name the results directory) |
+
+```bash
+cd Evaluation/Agentic/SWE-Bench
+
+# SWE-bench Lite
+sbatch --export=ALL,PREDICTIONS_PATH=/path/to/output_swe_lite/preds.json,SANDBOX_DIR=/path/to/sandboxes,RUN_ID=my_run \
+    scripts/eval_swe_lite.slurm
+
+# SWE-bench Verified
+sbatch --export=ALL,PREDICTIONS_PATH=/path/to/output_swe_verified/preds.json,SANDBOX_DIR=/path/to/sandboxes,RUN_ID=my_run \
+    scripts/eval_swe_verified.slurm
+```
+
+Results are written to `logs/run_evaluation/<RUN_ID>/`.
+
+---
+
+#### 4.2.2 OOD Evaluation
+
+We evaluate our agentic models on three out-of-distribution benchmarks. All evaluation scripts are under `Evaluation/Agentic/OODEval/` .
+
+---
+
+##### LiveCodeBench
+
+Evaluation code lives under `Evaluation/Agentic/OODEval/livecode/`.
+
+The pipeline (driven by `eval.sh`) has two steps: (1) generate completions with vLLM via `eval.py`, then (2) score them with `lcb_score.py`. Before submitting, set the following variables at the top of `eval.sh`:
+
+| Variable     | Description                               |
+| ------------ | ----------------------------------------- |
+| `MODEL_PATH` | Path to your merged HF model checkpoint   |
+| `VERSION`    | LiveCodeBench release tag (default: `v6`) |
+| `SEED`       | Random seed (default: `381`)              |
+| `PYBIN`      | Python binary to use (default: `python`)  |
+
+```bash
+cd Evaluation/Agentic/OODEval/livecode
+mkdir -p logs
+sbatch eval.sh
+```
+
+Results are written to `outputs_tp1_top_p0.95_seed<SEED>_<VERSION>/` inside the `livecode` directory.
+
+---
+
+##### LongBench v2
+
+Evaluation code lives under `Evaluation/Agentic/OODEval/longbench_v2/LongBench/`.
+
+The pipeline (driven by `eval.sh` one level up) has three steps: (1) launch a vLLM OpenAI-compatible server, (2) generate predictions with 0-shot CoT via `pred.py`, then (3) score with `result.py`. Before submitting, set:
+
+| Variable     | Description                                 |
+| ------------ | ------------------------------------------- |
+| `MODEL_PATH` | Path to your merged HF model checkpoint     |
+| `MODEL_NAME` | Short name used as the served model alias   |
+| `PORT`       | Port for the vLLM server (default: `21513`) |
+| `PYBIN`      | Python binary (default: `python`)           |
+| `VLLM_BIN`   | vllm binary (default: `vllm`)               |
+
+```bash
+cd Evaluation/Agentic/OODEval/longbench_v2
+mkdir -p logs
+sbatch eval.sh
+```
+
+Predictions are written to `LongBench/results/` and the final score summary to `LongBench/result.txt`.
+
+---
+
+##### Needle-in-a-Haystack (NIAH)
+
+Evaluation code lives under `Evaluation/Agentic/OODEval/niah/`.
+
+The pipeline (driven by `eval.sh`) has two steps: (1) launch a vLLM server, then (2) run the single-needle NIAH test via `needlehaystack.run`. A GPT-4o judge scores each retrieval. Before submitting, set:
+
+| Variable                            | Description                                                  |
+| ----------------------------------- | ------------------------------------------------------------ |
+| `MODEL_PATH`                        | Path to your merged HF model checkpoint                      |
+| `MODEL_NAME`                        | Short name used as the served model alias                    |
+| `OPENAI_API_KEY`                    | OpenAI key for the GPT-4o judge (must be set in environment) |
+| `PORT`                              | Port for the vLLM server (default: `21516`)                  |
+| `JUDGE_NAME`                        | Judge model (default: `gpt-4o`)                              |
+| `CTX_MIN` / `CTX_MAX`               | Context length sweep range (default: `1000`–`32000`)         |
+| `CTX_INTERVALS` / `DEPTH_INTERVALS` | Grid resolution (default: `15` / `10`)                       |
+| `PYBIN` / `VLLM_BIN`                | Python and vllm binaries (default: `python` / `vllm`)        |
+
+```bash
+cd Evaluation/Agentic/OODEval/niah
+mkdir -p logs
+export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+sbatch eval.sh
+```
+
+Results are saved under `niah/results/`.
 
 ---
 

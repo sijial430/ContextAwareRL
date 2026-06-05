@@ -1,0 +1,10 @@
+include: vstar_bench.yaml
+task: "vstar_bench_qwen25vl_zs_cot"
+generation_kwargs:
+  max_new_tokens: 16384
+  temperature: 0
+  do_sample: False
+lmms_eval_specific_kwargs:
+  default:
+    pre_prompt: ""
+    post_prompt: "\nThink step by step before answering."
