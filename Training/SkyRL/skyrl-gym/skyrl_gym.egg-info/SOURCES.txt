@@ -19,6 +19,8 @@ skyrl_gym/envs/gsm8k/multi_turn_env.py
 skyrl_gym/envs/gsm8k/utils.py
 skyrl_gym/envs/lcb/env.py
 skyrl_gym/envs/lcb/livecodebench.py
+skyrl_gym/envs/mcq/__init__.py
+skyrl_gym/envs/mcq/env.py
 skyrl_gym/envs/search/env.py
 skyrl_gym/envs/search/utils.py
 skyrl_gym/envs/searchcode/env.py

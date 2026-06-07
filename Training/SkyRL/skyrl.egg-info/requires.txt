@@ -1,0 +1,156 @@
+datasets>=4.0.0
+pillow>=11.3.0
+rich>=14.1.0
+safetensors>=0.6.2
+tokenizers>=0.21.2
+transformers<5,>=4.56.1
+typer>=0.17.4
+peft
+hf_transfer
+cloudpathlib>=0.23.0
+
+[aws]
+cloudpathlib[s3]
+
+[azure]
+cloudpathlib[azure]
+
+[dev]
+mkdocs
+mkdocs-material
+mkdocstrings[python]>=0.24.0
+pymdown-extensions>=10.7
+pytest
+pytest-forked
+pytest-asyncio
+pre-commit
+litellm
+torch
+ty
+cloudpathlib[s3]
+alembic
+griffe2md
+
+[flashrl]
+skyrl[skyrl-train]
+
+[flashrl:sys_platform == "linux"]
+flash-attn==2.8.3
+torch==2.7.0
+flashinfer-python
+torchvision
+
+[fsdp]
+skyrl[skyrl-train]
+
+[fsdp:sys_platform == "linux"]
+vllm==0.18.0
+vllm-router
+torch==2.10.0
+torchvision
+
+[fsdp:sys_platform == "linux" and (python_version != "3.12" or platform_machine != "x86_64")]
+flash-attn==2.8.3
+
+[fsdp:sys_platform == "linux" and platform_machine == "x86_64"]
+flashinfer-python==0.6.6
+flashinfer-jit-cache==0.6.6
+
+[fsdp:sys_platform == "linux" and python_version == "3.12" and platform_machine == "x86_64"]
+flash-attn @ https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.10-cp312/flash_attn-2.8.3%2Bcu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+
+[gcp]
+cloudpathlib[gs]
+
+[gpu]
+
+[gpu:sys_platform == "linux"]
+jax[cuda12]>=0.7.2
+
+[harbor]
+
+[harbor:python_version >= "3.12"]
+harbor
+
+[jax]
+jax<1.0,>=0.8
+flax>=0.12.2
+optax>=0.2.5
+
+[megatron]
+skyrl[skyrl-train]
+
+[megatron:sys_platform == "linux"]
+transformer-engine[pytorch]==2.10.0
+vllm==0.18.0
+vllm-router
+torch==2.10.0
+torchvision
+megatron-bridge
+megatron-core==0.16.0
+nvidia-modelopt
+
+[megatron:sys_platform == "linux" and (python_version != "3.12" or platform_machine != "x86_64")]
+flash-attn==2.8.3
+
+[megatron:sys_platform == "linux" and platform_machine == "x86_64"]
+flashinfer-python==0.6.6
+flashinfer-jit-cache==0.6.6
+
+[megatron:sys_platform == "linux" and python_version == "3.12" and platform_machine == "x86_64"]
+flash-attn @ https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.10-cp312/flash_attn-2.8.3%2Bcu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+
+[miniswe]
+skyrl[skyrl-train]
+mini-swe-agent<3,>=2.2.0
+litellm
+
+[skyrl-train]
+loguru
+tqdm
+ninja
+tensorboard
+func_timeout
+transformers>=4.51.0
+hydra-core==1.3.2
+accelerate
+torchdata
+omegaconf
+ray==2.51.1
+peft
+debugpy==1.8.0
+hf_transfer
+wandb
+datasets>=4.0.0
+tensordict
+jaxtyping
+skyrl-gym
+polars
+s3fs
+fastapi
+uvicorn
+pybind11
+setuptools
+
+[skyrl-train:sys_platform == "linux"]
+vllm-router
+
+[skyrl-train:sys_platform == "linux" and (python_version != "3.12" or platform_machine != "x86_64")]
+flash-attn==2.8.3
+
+[skyrl-train:sys_platform == "linux" and python_version == "3.12" and platform_machine == "x86_64"]
+flash-attn @ https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.10-cp312/flash_attn-2.8.3%2Bcu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+
+[tinker]
+tinker>=0.3.0
+fastapi[standard]
+sqlmodel
+sqlalchemy[asyncio]
+aiosqlite
+asyncpg
+psycopg2-binary
+
+[tpu]
+
+[tpu:sys_platform == "linux"]
+jax[tpu]>=0.7.2

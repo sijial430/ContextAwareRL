@@ -1,0 +1,48 @@
+# Multimodal (EasyR1) environment — Python 3.11, CUDA 12.8
+#
+# Full setup (run from repo root):
+#   conda create -n easyr1 python=3.11 -y && conda activate easyr1
+#   pip install -r requirements_easyr1.txt
+#   cd Training/EasyR1 && pip install -e . && cd ../..
+#
+# NOTE: flash-attn is included below as a direct GitHub release URL.
+# This avoids the [Errno 18] cross-device link error on HPC clusters
+# (GPFS /scratch + local /tmp on different filesystems).
+#
+# See README Section 1 for the complete setup walkthrough.
+
+--extra-index-url https://download.pytorch.org/whl/cu128
+--extra-index-url https://flashinfer.ai/whl/cu128/torch2.8/
+
+# PyTorch ecosystem (CUDA 12.8)
+torch==2.8.0
+torchvision==0.23.0
+torchaudio==2.8.0
+
+# Inference engine
+vllm==0.11.0
+flashinfer-python==0.6.6
+
+# FlashAttention — pre-built wheel installed directly to avoid cross-device rename on HPC
+flash-attn @ https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3%2Bcu12torch2.8cxx11abiTRUE-cp311-cp311-linux_x86_64.whl
+
+# Training framework dependencies
+accelerate==1.13.0
+codetiming
+datasets
+hf_transfer
+liger-kernel
+mathruler
+numpy<2.0.0
+omegaconf
+pandas
+peft
+pillow
+pyarrow>=15.0.0
+pylatexenc
+qwen-vl-utils
+ray[default]==2.55.1
+tensordict
+torchdata
+transformers>=4.54.0,<=4.57.0
+wandb

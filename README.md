@@ -26,19 +26,43 @@ Code/
 
 ## 1. Environment Setup
 
-We recommend Python 3.10+ and CUDA 12.x. Create a separate environment per track.
+We use CUDA 12.8 and one dedicated conda environment per track. Each environment can be installed with the commands below.
 
-### Multimodal (EasyR1 / verl)
+### Multimodal (EasyR1 / verl) — `conda activate easyr1`
 
-```bash
-
-```
-
-### Agentic (SkyRL)
+> Python 3.11 · PyTorch 2.8 · vLLM 0.11 · CUDA 12.8
 
 ```bash
+# 1. Create and activate the environment
+conda create -n easyr1 python=3.11 -y
+conda activate easyr1
 
+# 2. Install all dependencies (PyTorch 2.8 + vLLM + FlashInfer + FlashAttention)
+#    flash-attn is fetched as a pre-built wheel from GitHub to avoid cross-device
+#    rename errors on HPC clusters (GPFS /scratch vs local /tmp).
+pip install -r requirements_easyr1.txt
+
+# 3. Install the EasyR1 training framework in editable mode
+cd Training/EasyR1 && pip install -e . && cd ../..
 ```
+
+### Agentic (SkyRL) — `conda activate skyrl`
+
+> Python 3.12 · PyTorch 2.10 · vLLM 0.18 · CUDA 12.8 · managed via `uv`
+
+```bash
+# 1. Create and activate the environment (minimal — uv manages the full dependency graph)
+conda create -n skyrl python=3.12 -y
+conda activate skyrl
+pip install uv==0.11.2
+
+# 2. Sync the complete environment into Training/SkyRL/.venv
+cd Training/SkyRL
+uv sync --extra fsdp --extra miniswe
+# Training scripts call .venv/bin/python directly — no further activation is needed.
+```
+
+See `requirements_easyr1.txt` at the repo root for the full multimodal package list. Agentic dependencies are fully specified in `Training/SkyRL/pyproject.toml`.
 
 > **Hardware.** Experiments were run on multi-GPU nodes (A100/H100 80GB) via Slurm. The provided launch scripts (`sbatch ...`) assume a Slurm cluster; adapt the resource directives at the top of each script to your environment.
 
