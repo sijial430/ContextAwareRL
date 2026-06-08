@@ -110,21 +110,24 @@ class VLLMHijack:
         setattr(LRUCacheWorkerLoRAManager, "_load_adapter", hijack__load_adapter)
 
         if vs.parse(version("vllm")).base_version == "0.11.0":
-            from vllm.model_executor.models.module_mapping import MultiModelKeys
-            from vllm.model_executor.models.qwen3_vl import Qwen3VLForConditionalGeneration
+            try:
+                from vllm.model_executor.models.module_mapping import MultiModelKeys
+                from vllm.model_executor.models.qwen3_vl import Qwen3VLForConditionalGeneration
 
-            def hijack__get_mm_mapping(self) -> MultiModelKeys:
-                """
-                Patch vllm.model_executor.models.qwen3_vl.Qwen3VLForConditionalGeneration.get_mm_mapping in vLLM 0.11.0
-                Reason:
-                vLLM 0.11.0 uses "model.visual.*" prefixes for Qwen3-VL, but the real module names are "visual.*".
-                This breaks LoRA filtering for multimodal parts, so we align the prefixes to the real module names.
-                Fixed upstream: https://github.com/vllm-project/vllm/commit/9f4e309
-                """
-                return MultiModelKeys.from_string_field(
-                    language_model="language_model",
-                    connector="visual.merger.",
-                    tower_model="visual.",
-                )
+                def hijack__get_mm_mapping(self) -> MultiModelKeys:
+                    """
+                    Patch vllm.model_executor.models.qwen3_vl.Qwen3VLForConditionalGeneration.get_mm_mapping in vLLM 0.11.0
+                    Reason:
+                    vLLM 0.11.0 uses "model.visual.*" prefixes for Qwen3-VL, but the real module names are "visual.*".
+                    This breaks LoRA filtering for multimodal parts, so we align the prefixes to the real module names.
+                    Fixed upstream: https://github.com/vllm-project/vllm/commit/9f4e309
+                    """
+                    return MultiModelKeys.from_string_field(
+                        language_model="language_model",
+                        connector="visual.merger.",
+                        tower_model="visual.",
+                    )
 
-            setattr(Qwen3VLForConditionalGeneration, "get_mm_mapping", hijack__get_mm_mapping)
+                setattr(Qwen3VLForConditionalGeneration, "get_mm_mapping", hijack__get_mm_mapping)
+            except (ImportError, ModuleNotFoundError):
+                pass  # qwen3_vl not available in this transformers version; skip patch

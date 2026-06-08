@@ -1,130 +1,0 @@
-+ module load proxy/default
-+ local _mlredir=1
-+ '[' -n '' ']'
-+ case " $@ " in
-+ '[' 1 -eq 0 ']'
-+ _module_raw load proxy/default
-+ export WANDB_MODE=disabled
-+ WANDB_MODE=disabled
-+ echo 'Job ID: 9357959'
-+ echo 'Node: della-l08g4'
-++ date
-+ echo 'Start time: Sun Jun  7 03:45:09 PM EDT 2026'
-+ MODEL_PATH=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Qwen2.5-VL-7B-Instruct
-+ TRAIN_FILES=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/DataGen/DataSource/rl_gt_aug_v3_10.jsonl
-+ VAL_FILES=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/DataGen/DataSource/val_gt_v3.jsonl
-+ mkdir -p logs
-+ python3 -m verl.trainer.main config=examples/config.yaml data.train_files=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/DataGen/DataSource/rl_gt_aug_v3_10.jsonl data.val_files=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/DataGen/DataSource/val_gt_v3.jsonl data.format_prompt=./examples/format_prompt/qwen25.jinja worker.actor.model.model_path=/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Qwen2.5-VL-7B-Instruct worker.reward.reward_function=./examples/reward_function/r1v.py:compute_score trainer.experiment_name=smoke_test trainer.n_gpus_per_node=2 'trainer.logger=[file]' trainer.max_steps=2 trainer.val_before_train=false trainer.val_freq=-1 trainer.save_freq=-1 data.rollout_batch_size=16 data.max_prompt_length=4096 data.max_response_length=512 worker.rollout.max_num_batched_tokens=8192 worker.actor.global_batch_size=8 data.choose_image_batch_size=8 algorithm.choose_image_coef=0.005 algorithm.choose_image_clip=5.0
-/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/transformers/utils/hub.py:111: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
-  warnings.warn(
-[2026-06-07 15:45:27,732 W 788643 788643] network_util.cc:296: Failed to determine local IP via external connectivity to: 8.8.8.8:53, [2001:4860:4860::8888]:53, falling back to hostname resolution
-2026-06-07 15:45:32,313	INFO worker.py:2003 -- Started a local Ray instance. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
-/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/ray/_private/worker.py:2051: FutureWarning: Tip: In future versions of Ray, Ray will no longer override accelerator visible devices env var if num_gpus=0 or num_gpus=None (default). To enable this behavior and turn off this error message, set RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
-  warnings.warn(
-[36m(pid=792351)[0m /scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/transformers/utils/hub.py:111: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
-[36m(pid=792351)[0m   warnings.warn(
-[36m(Runner pid=792351)[0m Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 41500 examples [00:00, 711680.86 examples/s]
-[36m(Runner pid=792351)[0m Filtering regular (single-image) samples:   0%|          | 0/41500 [00:00<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering regular (single-image) samples:  63%|██████▎   | 26000/41500 [00:00<00:00, 251517.39 examples/s]Filtering regular (single-image) samples: 100%|██████████| 41500/41500 [00:00<00:00, 242399.74 examples/s]
-[36m(Runner pid=792351)[0m Setting TOKENIZERS_PARALLELISM=false for forked processes.
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:00<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:01<?, ? examples/s]
-[36m(pid=792513)[0m /scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/transformers/utils/hub.py:111: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
-[36m(pid=792513)[0m   warnings.warn(
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:01<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:01<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:01<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:01<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:02<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:02<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:02<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:02<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:03<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:03<?, ? examples/s]
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:03<?, ? examples/s]
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Arxiv/Code/Training/EasyR1/verl/trainer/main.py", line 137, in <module>
-    main()
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Arxiv/Code/Training/EasyR1/verl/trainer/main.py", line 129, in main
-    ray.get(runner.run.remote(ppo_config))
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 107, in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/ray/_private/worker.py", line 2980, in get
-    values, debugger_breakpoint = worker.get_objects(
-                                  ^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/ray/_private/worker.py", line 1023, in get_objects
-    raise value.as_instanceof_cause()
-ray.exceptions.RayTaskError(FileNotFoundError): multiprocess.pool.RemoteTraceback: 
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/multiprocess/pool.py", line 125, in worker
-    result = (True, func(*args, **kwds))
-                    ^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/utils/py_utils.py", line 585, in _write_generator_to_queue
-    for i, result in enumerate(func(**kwargs)):
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/arrow_dataset.py", line 3998, in _map_single
-    for i, batch in iter_outputs(shard_iterable):
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/arrow_dataset.py", line 3951, in iter_outputs
-    yield i, apply_function(example, i, offset=offset)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/arrow_dataset.py", line 3872, in apply_function
-    processed_inputs = function(*fn_args, *additional_args, **fn_kwargs)
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/arrow_dataset.py", line 7314, in get_indices_from_mask_function
-    mask.append(function(example, *additional_args, **fn_kwargs))
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Arxiv/Code/Training/EasyR1/verl/utils/dataset.py", line 208, in _filter_overlong_prompts
-    processed_images.append(process_image(image, self.min_pixels, self.max_pixels))
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Arxiv/Code/Training/EasyR1/verl/utils/dataset.py", line 57, in process_image
-    image = Image.open(image)
-            ^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/PIL/Image.py", line 3635, in open
-    fp = builtins.open(filename, "rb")
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: '/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/DataGen/DataSource/Math_Geo/MAVIS-Geometry/RuleBaseGeo/depth2/1714/1715_vision_dominant.jpg'
-"""
-
-The above exception was the direct cause of the following exception:
-
-[36mray::Runner.run()[39m (pid=792351, ip=172.17.6.36, actor_id=60e2e43ce7975c8e693614a801000000, repr=<main.Runner object at 0x14c1e4094e10>)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Arxiv/Code/Training/EasyR1/verl/trainer/main.py", line 80, in run
-    train_dataloader, val_dataloader, choose_image_dataloader = create_dataloader(
-                                                                ^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Arxiv/Code/Training/EasyR1/verl/trainer/data_loader.py", line 32, in create_dataloader
-    train_dataset = RLHFDataset(
-                    ^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/Arxiv/Code/Training/EasyR1/verl/utils/dataset.py", line 160, in __init__
-    self.dataset = self.dataset.filter(
-                   ^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/arrow_dataset.py", line 576, in wrapper
-    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
-                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/fingerprint.py", line 468, in wrapper
-    out = func(dataset, *args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/arrow_dataset.py", line 4253, in filter
-    indices = self.map(
-              ^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/arrow_dataset.py", line 576, in wrapper
-    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
-                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/arrow_dataset.py", line 3624, in map
-    for rank, done, content in iflatmap_unordered(
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/utils/py_utils.py", line 624, in iflatmap_unordered
-    [async_result.get(timeout=0.05) for async_result in async_results]
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/datasets/utils/py_utils.py", line 624, in <listcomp>
-    [async_result.get(timeout=0.05) for async_result in async_results]
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/multiprocess/pool.py", line 774, in get
-    raise self._value
-FileNotFoundError: [Errno 2] No such file or directory: '/scratch/gpfs/PMITTAL/peiyang/px4668/ImageRL/DataGen/DataSource/Math_Geo/MAVIS-Geometry/RuleBaseGeo/depth2/1714/1715_vision_dominant.jpg'
-[36m(Runner pid=792351)[0m Filtering overlong prompts (num_proc=16):   0%|          | 0/38000 [00:03<?, ? examples/s]
-[36m(pid=792515)[0m /scratch/gpfs/PMITTAL/peiyang/px4668/conda_envs/easyr1_test/lib/python3.11/site-packages/transformers/utils/hub.py:111: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
-[36m(pid=792515)[0m   warnings.warn(

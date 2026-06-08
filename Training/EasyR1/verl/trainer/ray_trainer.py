@@ -743,5 +743,5 @@ class RayPPOTrainer:
 
             print(f"Final validation metrics:\n{convert_dict_to_str(unflatten_dict(val_metrics))}")
 
-        if self.config.trainer.save_freq <= 0 or self.global_step % self.config.trainer.save_freq != 0:
+        if self.config.trainer.save_freq > 0 and self.global_step % self.config.trainer.save_freq != 0:
             self._save_checkpoint()

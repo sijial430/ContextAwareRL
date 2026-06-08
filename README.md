@@ -30,7 +30,7 @@ We use CUDA 12.8 and one dedicated conda environment per track. Each environment
 
 ### Multimodal (EasyR1 / verl) — `conda activate easyr1`
 
-> Python 3.11 · PyTorch 2.8 · vLLM 0.11 · CUDA 12.8
+> Python 3.11 · PyTorch 2.8 · vLLM 0.11 · CUDA 12.8 · transformers 4.57.6
 
 ```bash
 # 1. Create and activate the environment
@@ -38,8 +38,6 @@ conda create -n easyr1 python=3.11 -y
 conda activate easyr1
 
 # 2. Install all dependencies (PyTorch 2.8 + vLLM + FlashInfer + FlashAttention)
-#    flash-attn is fetched as a pre-built wheel from GitHub to avoid cross-device
-#    rename errors on HPC clusters (GPFS /scratch vs local /tmp).
 pip install -r requirements_easyr1.txt
 
 # 3. Install the EasyR1 training framework in editable mode
