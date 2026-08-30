@@ -26,8 +26,6 @@ tasks:
       - mountPath: /weka/nora-default
         source:
           weka: nora-default
-    result:
-      path: /results
     resources:
       cpuCount: 64
       gpuCount: 4

@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-mkdir -p /results/ckpts /results/exports /results/logs /results/traj /workspace/assets/sifs
+weka_workspace="/weka/nora-default/sijial/workspace"
+output_parent="${CONTEXTAWARE_OUTPUT_ROOT:-$weka_workspace/contextaware-rl/qwen3-8b-smoke}"
+run_id="${BEAKER_EXPERIMENT_ID:-${BEAKER_JOB_ID:-$(date -u +%Y%m%dT%H%M%SZ)}}"
+output_dir="$output_parent/$run_id"
+test -d "$weka_workspace"
+test -w "$weka_workspace"
+mkdir -p \
+  "$output_dir/ckpts" \
+  "$output_dir/exports" \
+  "$output_dir/logs" \
+  "$output_dir/traj" \
+  "$output_dir/wandb" \
+  /workspace/assets/sifs
+exec > >(tee -a "$output_dir/run.log") 2>&1
+printf 'WEKA_OUTPUT_DIR=%s\n' "$output_dir" | tee "$output_dir/OUTPUT_DIR.txt"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y ca-certificates curl fuse2fs git libnuma1 proot squashfs-tools uidmap
@@ -19,7 +33,7 @@ uvx --from huggingface-hub==0.36.2 hf download Qwen/Qwen3-8B \
 apptainer pull \
   /workspace/assets/sifs/xingyaoww_sweb.eval.x86_64.getmoto_s_moto-7365-latest.sif \
   docker://docker.io/xingyaoww/sweb.eval.x86_64.getmoto_s_moto-7365:latest
-sha256sum /workspace/assets/sifs/*.sif | tee /results/SIF_SHA256SUMS
+sha256sum /workspace/assets/sifs/*.sif | tee "$output_dir/SIF_SHA256SUMS"
 uv sync --python 3.12 --extra fsdp --extra miniswe
 
 .venv/bin/python - <<'PY'
@@ -76,7 +90,7 @@ export no_proxy="127.0.0.1,localhost"
 export NO_PROXY="127.0.0.1,localhost"
 export MSWEA_COST_TRACKING="ignore_errors"
 export TMPDIR="/tmp/miniswe-sandboxes"
-export WANDB_DIR="/results/wandb"
+export WANDB_DIR="$output_dir/wandb"
 export WANDB_CACHE_DIR="/tmp/wandb-cache"
 export WANDB_CONFIG_DIR="/tmp/wandb-config"
 mkdir -p "$TMPDIR" "$WANDB_DIR" "$WANDB_CACHE_DIR" "$WANDB_CONFIG_DIR"
@@ -147,14 +161,14 @@ export UV_OFFLINE=true
   generator.inference_engine.gpu_memory_utilization=0.7 \
   trainer.logger="wandb" \
   trainer.project_name="ContextAwareRL-reproduction" \
-  trainer.run_name="qwen3-8b-beaker-smoke" \
+  trainer.run_name="qwen3-8b-beaker-smoke-$run_id" \
   trainer.resume_mode=none \
-  trainer.ckpt_path="/results/ckpts" \
-  trainer.export_path="/results/exports" \
-  trainer.log_path="/results/logs" \
+  trainer.ckpt_path="$output_dir/ckpts" \
+  trainer.export_path="$output_dir/exports" \
+  trainer.log_path="$output_dir/logs" \
   generator.miniswe_config_path="/workspace/data/swebench-proot-smoke.yaml" \
-  generator.miniswe_traj_dir="/results/traj"
+  generator.miniswe_traj_dir="$output_dir/traj"
 
-test -d /results/ckpts/global_step_1
-find /results/ckpts/global_step_1 -maxdepth 3 -type f -print | sort | tee /results/checkpoint-files.txt
-printf 'TRAINING_STEP_VERIFIED\n' | tee /results/SUCCESS
+test -d "$output_dir/ckpts/global_step_1"
+find "$output_dir/ckpts/global_step_1" -maxdepth 3 -type f -print | sort | tee "$output_dir/checkpoint-files.txt"
+printf 'TRAINING_STEP_VERIFIED\n' | tee "$output_dir/SUCCESS"

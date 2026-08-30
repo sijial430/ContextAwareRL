@@ -1,0 +1,61 @@
+version: v2
+description: Move small prior ContextAwareRL Beaker result datasets into the requested Weka workspace.
+tasks:
+  - name: migrate-small-results-to-weka
+    image:
+      docker: ubuntu:24.04
+    command:
+      - /bin/bash
+      - -lc
+      - |
+        set -euxo pipefail
+        destination_root=/weka/nora-default/sijial/workspace/contextaware-rl/migrated-beaker-results
+        mkdir -p "$destination_root"
+
+        migrate() {
+          source_dir="$1"
+          experiment_id="$2"
+          destination_dir="$destination_root/$experiment_id"
+          staging_dir="$destination_root/.${experiment_id}.${BEAKER_EXPERIMENT_ID:-manual}.incomplete"
+          test ! -e "$destination_dir"
+          test ! -e "$staging_dir"
+          mkdir -p "$staging_dir"
+          cp -a "$source_dir"/. "$staging_dir"/
+          source_files="$(find "$source_dir" -type f | wc -l)"
+          destination_files="$(find "$staging_dir" -type f | wc -l)"
+          source_bytes="$(find "$source_dir" -type f -printf '%s\n' | awk '{ total += $1 } END { print total + 0 }')"
+          destination_bytes="$(find "$staging_dir" -type f -printf '%s\n' | awk '{ total += $1 } END { print total + 0 }')"
+          test "$source_files" -eq "$destination_files"
+          test "$source_bytes" -eq "$destination_bytes"
+          mv "$staging_dir" "$destination_dir"
+          printf '%s files=%s bytes=%s\n' "$experiment_id" "$destination_files" "$destination_bytes" \
+            | tee "$destination_dir/MIGRATED_FROM_BEAKER.txt"
+        }
+
+        migrate /source/full_success 01M183DM2R5H8P561SRRBZT6FX
+        migrate /source/watcher 01M183TEQSRPM27V9VS5Q20QSR
+        migrate /source/full_failed 01M17WB9MVWFMBPKAN5E4PC8G5
+        date -u +%FT%TZ | tee "$destination_root/SMALL_MIGRATION_COMPLETE.txt"
+    datasets:
+      - mountPath: /source/full_success
+        source:
+          beaker: 01M183DM32TTMFR4VWY6AWD5ZF
+      - mountPath: /source/watcher
+        source:
+          beaker: 01M183TER387CT1AG8WKPSTJ95
+      - mountPath: /source/full_failed
+        source:
+          beaker: 01M17WB9N18SVH9MX8NS2DC69M
+      - mountPath: /weka/nora-default
+        source:
+          weka: nora-default
+    resources:
+      cpuCount: 8
+      memory: 32 GiB
+    constraints:
+      cluster:
+        - ai2/jupiter
+    context:
+      priority: urgent
+      autoResume: true
+    timeout: 1h

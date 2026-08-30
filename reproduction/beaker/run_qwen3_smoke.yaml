@@ -15,12 +15,15 @@ tasks:
         secret: HF_TOKEN
       - name: WANDB_API_KEY
         secret: SIJIAL_WANDB_API_KEY
+      - name: CONTEXTAWARE_OUTPUT_ROOT
+        value: /weka/nora-default/sijial/workspace/contextaware-rl/qwen3-8b-smoke
     datasets:
       - mountPath: /input
         source:
           beaker: 01M16N561NQBZ4M8H9527MH6P3
-    result:
-      path: /results
+      - mountPath: /weka/nora-default
+        source:
+          weka: nora-default
     resources:
       cpuCount: 64
       gpuCount: 4

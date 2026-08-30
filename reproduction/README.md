@@ -156,6 +156,14 @@ four-GPU training step. Outputs are placed below
 `/weka/nora-default/sijial/workspace/contextaware-rl/` in an
 experiment-specific directory.
 
+The Beaker specs intentionally do not declare a result-dataset path. Training
+checkpoints, trajectories, logs, W&B local state, prepared assets, manifests,
+and verification markers are durable only under the requested Weka workspace.
+Container-local paths such as `/workspace` and `/tmp` are used only for
+ephemeral installation, caches, extracted sandboxes, and model inputs. The two
+`migrate_*_to_weka.yaml` specs copy and byte-verify result datasets created by
+older versions of the launchers before those source datasets are removed.
+
 ## Compatibility changes
 
 - `mini_swe_utils.py` resolves local SIFs for the `proot_sif` environment and

@@ -15,10 +15,9 @@ mkdir -p \
   "$output_dir/logs" \
   "$output_dir/traj" \
   "$output_dir/wandb" \
-  /results \
   /workspace/assets/sifs
-exec > >(tee -a "$output_dir/run.log" /results/run.log) 2>&1
-printf 'WEKA_OUTPUT_DIR=%s\n' "$output_dir" | tee "$output_dir/OUTPUT_DIR.txt" /results/OUTPUT_DIR.txt
+exec > >(tee -a "$output_dir/run.log") 2>&1
+printf 'WEKA_OUTPUT_DIR=%s\n' "$output_dir" | tee "$output_dir/OUTPUT_DIR.txt"
 cp /input/run_qwen3_fullcheck.sh "$output_dir/run_qwen3_fullcheck.sh"
 
 export DEBIAN_FRONTEND=noninteractive
@@ -76,7 +75,7 @@ while IFS=$'\t' read -r sif_name image_name instance_id; do
     "/workspace/assets/sifs/$sif_name" \
     "docker://$image_name"
 done < /workspace/data/sif_manifest.tsv
-sha256sum /workspace/assets/sifs/*.sif | tee "$output_dir/SIF_SHA256SUMS" /results/SIF_SHA256SUMS
+sha256sum /workspace/assets/sifs/*.sif | tee "$output_dir/SIF_SHA256SUMS"
 
 cp examples/train/mini_swe_agent/swebench.yaml /workspace/data/swebench-proot-fullcheck.yaml
 sed -i 's/environment_class: singularity/environment_class: proot_sif/' /workspace/data/swebench-proot-fullcheck.yaml
@@ -195,6 +194,6 @@ checkpoint_dir="$(find "$checkpoint_root" -maxdepth 1 -type d -name 'global_step
 test -n "$checkpoint_dir"
 test "$(find "$checkpoint_dir/policy" -maxdepth 1 -name 'model_world_size_4_rank_*.pt' | wc -l)" -eq 4
 test "$(find "$checkpoint_dir/policy" -maxdepth 1 -name 'optim_world_size_4_rank_*.pt' | wc -l)" -eq 4
-find "$checkpoint_dir" -maxdepth 3 -type f -print | sort | tee "$output_dir/checkpoint-files.txt" /results/checkpoint-files.txt
-du -sh "$checkpoint_dir" | tee "$output_dir/checkpoint-size.txt" /results/checkpoint-size.txt
-printf 'FULL_CONFIG_TRAINING_STEP_VERIFIED %s\n' "$checkpoint_dir" | tee "$output_dir/SUCCESS" /results/SUCCESS
+find "$checkpoint_dir" -maxdepth 3 -type f -print | sort | tee "$output_dir/checkpoint-files.txt"
+du -sh "$checkpoint_dir" | tee "$output_dir/checkpoint-size.txt"
+printf 'FULL_CONFIG_TRAINING_STEP_VERIFIED %s\n' "$checkpoint_dir" | tee "$output_dir/SUCCESS"

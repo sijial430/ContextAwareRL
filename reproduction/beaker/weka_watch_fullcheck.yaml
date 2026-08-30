@@ -10,7 +10,6 @@ tasks:
       - >-
         set -euo pipefail;
         output_dir=/weka/nora-default/sijial/workspace/contextaware-rl/qwen3-8b-full-config-1-step/01M183DM2R5H8P561SRRBZT6FX;
-        mkdir -p /results;
         for iteration in $(seq 1 240); do
           trajectory_count=0;
           checkpoint_file_count=0;
@@ -20,10 +19,9 @@ tasks:
           if test -d "$output_dir/checkpoints"; then
             checkpoint_file_count=$(find "$output_dir/checkpoints" -type f | wc -l);
           fi;
-          printf '%s trajectories=%s checkpoint_files=%s\n' "$(date -u +%FT%TZ)" "$trajectory_count" "$checkpoint_file_count" | tee /results/latest.txt;
+          printf '%s trajectories=%s checkpoint_files=%s\n' "$(date -u +%FT%TZ)" "$trajectory_count" "$checkpoint_file_count";
           if test -s "$output_dir/SUCCESS"; then
-            cp "$output_dir/SUCCESS" /results/SUCCESS;
-            find "$output_dir" -maxdepth 3 -type f -print | sort > /results/persistent-files.txt;
+            cat "$output_dir/SUCCESS";
             exit 0;
           fi;
           sleep 30;
@@ -33,8 +31,6 @@ tasks:
       - mountPath: /weka/nora-default
         source:
           weka: nora-default
-    result:
-      path: /results
     resources:
       cpuCount: 1
       memory: 1 GiB

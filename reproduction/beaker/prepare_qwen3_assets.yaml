@@ -16,8 +16,9 @@ tasks:
       - mountPath: /input
         source:
           beaker: 01M16EF1K6H638GJP227J41W2Y
-    result:
-      path: /results
+      - mountPath: /weka/nora-default
+        source:
+          weka: nora-default
     resources:
       cpuCount: 16
       memory: 128 GiB

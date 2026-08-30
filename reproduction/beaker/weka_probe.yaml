@@ -10,16 +10,14 @@ tasks:
       - >-
         set -euxo pipefail;
         output_dir=/weka/nora-default/sijial/workspace/contextaware-rl;
-        mkdir -p "$output_dir" /results;
-        date -u +%FT%TZ | tee "$output_dir/BEAKER_WEKA_PROBE.txt" /results/BEAKER_WEKA_PROBE.txt;
+        mkdir -p "$output_dir";
+        date -u +%FT%TZ | tee "$output_dir/BEAKER_WEKA_PROBE.txt";
         test -s "$output_dir/BEAKER_WEKA_PROBE.txt";
         ls -ld /weka/nora-default/sijial/workspace "$output_dir"
     datasets:
       - mountPath: /weka/nora-default
         source:
           weka: nora-default
-    result:
-      path: /results
     resources:
       cpuCount: 1
       memory: 1 GiB

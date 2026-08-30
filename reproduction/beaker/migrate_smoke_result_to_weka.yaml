@@ -1,0 +1,51 @@
+version: v2
+description: Move the prior 122 GiB ContextAwareRL smoke result dataset into the requested Weka workspace.
+tasks:
+  - name: migrate-smoke-result-to-weka
+    image:
+      docker: ubuntu:24.04
+    command:
+      - /bin/bash
+      - -lc
+      - |
+        set -euxo pipefail
+        source_dir=/source/smoke
+        experiment_id=01M16N5RDS1DTCJJKD16804S74
+        destination_root=/weka/nora-default/sijial/workspace/contextaware-rl/migrated-beaker-results
+        destination_dir="$destination_root/$experiment_id"
+        staging_dir="$destination_root/.${experiment_id}.${BEAKER_EXPERIMENT_ID:-manual}.incomplete"
+
+        mkdir -p "$destination_root"
+        test ! -e "$destination_dir"
+        test ! -e "$staging_dir"
+        mkdir -p "$staging_dir"
+        cp -a "$source_dir"/. "$staging_dir"/
+
+        source_files="$(find "$source_dir" -type f | wc -l)"
+        destination_files="$(find "$staging_dir" -type f | wc -l)"
+        source_bytes="$(find "$source_dir" -type f -printf '%s\n' | awk '{ total += $1 } END { print total + 0 }')"
+        destination_bytes="$(find "$staging_dir" -type f -printf '%s\n' | awk '{ total += $1 } END { print total + 0 }')"
+        test "$source_files" -eq "$destination_files"
+        test "$source_bytes" -eq "$destination_bytes"
+
+        mv "$staging_dir" "$destination_dir"
+        printf '%s files=%s bytes=%s\n' "$experiment_id" "$destination_files" "$destination_bytes" \
+          | tee "$destination_dir/MIGRATED_FROM_BEAKER.txt"
+        date -u +%FT%TZ | tee "$destination_root/SMOKE_MIGRATION_COMPLETE.txt"
+    datasets:
+      - mountPath: /source/smoke
+        source:
+          beaker: 01M16N5RE2P30B64B5G3YNN55E
+      - mountPath: /weka/nora-default
+        source:
+          weka: nora-default
+    resources:
+      cpuCount: 8
+      memory: 32 GiB
+    constraints:
+      cluster:
+        - ai2/jupiter
+    context:
+      priority: urgent
+      autoResume: true
+    timeout: 8h
