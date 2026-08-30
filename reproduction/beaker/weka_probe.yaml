@@ -1,0 +1,31 @@
+version: v2
+description: Verify persistent Weka access for ContextAwareRL outputs.
+tasks:
+  - name: weka-probe
+    image:
+      docker: ubuntu:24.04
+    command:
+      - /bin/bash
+      - -lc
+      - >-
+        set -euxo pipefail;
+        output_dir=/weka/nora-default/sijial/workspace/contextaware-rl;
+        mkdir -p "$output_dir" /results;
+        date -u +%FT%TZ | tee "$output_dir/BEAKER_WEKA_PROBE.txt" /results/BEAKER_WEKA_PROBE.txt;
+        test -s "$output_dir/BEAKER_WEKA_PROBE.txt";
+        ls -ld /weka/nora-default/sijial/workspace "$output_dir"
+    datasets:
+      - mountPath: /weka/nora-default
+        source:
+          weka: nora-default
+    result:
+      path: /results
+    resources:
+      cpuCount: 1
+      memory: 1 GiB
+    constraints:
+      cluster:
+        - ai2/jupiter
+    context:
+      priority: urgent
+    timeout: 10m

@@ -1,0 +1,42 @@
+version: v2
+description: >-
+  One complete upstream-sized Qwen3-8B ContextAwareRL agentic step: 16 prompts,
+  eight rollouts per prompt, 35 generator turns, GRPO plus choose-trajectory
+  loss, optimizer update, and verified four-rank FSDP checkpoint.
+tasks:
+  - name: qwen3-agentic-fullcheck
+    image:
+      docker: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-devel
+    command:
+      - /bin/bash
+      - /input/run_qwen3_fullcheck.sh
+    envVars:
+      - name: HF_TOKEN
+        secret: HF_TOKEN
+      - name: WANDB_API_KEY
+        secret: SIJIAL_WANDB_API_KEY
+      - name: CONTEXTAWARE_OUTPUT_ROOT
+        value: /weka/nora-default/sijial/workspace/contextaware-rl/qwen3-8b-full-config-1-step
+      - name: MINISWE_TRAJECTORY_TIMEOUT_SECONDS
+        value: "3600"
+    datasets:
+      - mountPath: /input
+        source:
+          beaker: 01M183CWTSQXR72C8RGT5HZGCY
+      - mountPath: /weka/nora-default
+        source:
+          weka: nora-default
+    result:
+      path: /results
+    resources:
+      cpuCount: 64
+      gpuCount: 4
+      memory: 800 GiB
+      sharedMemory: 64 GiB
+    constraints:
+      cluster:
+        - ai2/jupiter
+    context:
+      priority: urgent
+      autoResume: true
+    timeout: 24h

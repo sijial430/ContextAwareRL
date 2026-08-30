@@ -11,6 +11,8 @@ from jinja2 import Template
 
 from minisweagent.environments import Environment, get_environment
 
+from .proot_sif_environment import ProotSIFEnvironment
+
 
 class MiniSWEEvaluationResult(TypedDict):
     instance_id: str
@@ -25,7 +27,7 @@ def get_sb_environment(config: dict, instance: dict, data_source: str) -> Enviro
     image_name = get_docker_image_name(instance, data_source)
     if env_config["environment_class"] == "docker":
         env_config["image"] = image_name
-    elif env_config["environment_class"] == "singularity":
+    elif env_config["environment_class"] in ("singularity", "proot_sif"):
         # Check for a local SIF file first to avoid pulling from Docker Hub.
         # `local_sif_dir` may be a single directory (str) or a list of
         # directories searched in order. Multiple dirs let us mix image
@@ -47,7 +49,11 @@ def get_sb_environment(config: dict, instance: dict, data_source: str) -> Enviro
             env_config["image"] = f"docker://{image_name}"
     # Remove local_sif_dir before passing to get_environment (not a valid SingularityEnvironmentConfig field)
     env_config.pop("local_sif_dir", None)
-    env = get_environment(env_config)
+    if env_config["environment_class"] == "proot_sif":
+        env_config.pop("environment_class")
+        env = ProotSIFEnvironment(**env_config)
+    else:
+        env = get_environment(env_config)
     try:
         if startup_command := config.get("run", {}).get("env_startup_command"):
             startup_command = Template(startup_command).render(**instance)

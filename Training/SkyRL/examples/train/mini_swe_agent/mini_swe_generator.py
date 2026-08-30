@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any, Tuple
 import yaml
@@ -29,7 +30,7 @@ from skyrl.train.generators.utils import (
 # is forcibly cancelled so it cannot block the rest of the batch indefinitely.
 # 90 minutes — long enough that normal trajectories (~observed step time) can
 # finish, short enough that one hung sandbox can't stall the batch indefinitely.
-TRAJECTORY_TIMEOUT_SECONDS = 90 * 60
+TRAJECTORY_TIMEOUT_SECONDS = int(os.getenv("MINISWE_TRAJECTORY_TIMEOUT_SECONDS", 90 * 60))
 
 
 @dataclass

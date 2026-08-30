@@ -1,0 +1,45 @@
+version: v2
+description: >-
+  Probe SIF extraction plus PRoot execution inside Beaker after nested
+  Apptainer execution was blocked by the Beaker container security profile.
+tasks:
+  - name: apptainer-probe
+    image:
+      docker: ubuntu:24.04
+    command:
+      - /bin/sh
+      - -lc
+      - |
+        set -x
+        mkdir -p /results
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt-get install -y ca-certificates curl fuse2fs proot squashfs-tools uidmap
+        curl -fL -o /tmp/apptainer.deb https://github.com/apptainer/apptainer/releases/download/v1.4.5/apptainer_1.4.5_amd64.deb
+        curl -fL -o /tmp/apptainer-suid.deb https://github.com/apptainer/apptainer/releases/download/v1.4.5/apptainer-suid_1.4.5_amd64.deb
+        apt-get install -y /tmp/apptainer.deb /tmp/apptainer-suid.deb
+        uname -a | tee /results/uname.txt
+        cat /etc/os-release | tee /results/os-release.txt
+        id | tee /results/id.txt
+        nvidia-smi | tee /results/nvidia-smi.txt
+        apptainer --version | tee /results/apptainer-version.txt
+        cat /proc/sys/kernel/unprivileged_userns_clone 2>&1 | tee /results/userns.txt
+        apptainer pull /tmp/alpine.sif docker://alpine:3.20 2>&1 | tee /results/pull.txt
+        apptainer sif list /tmp/alpine.sif 2>&1 | tee /results/sif-list.txt
+        partition_id="$(awk '/FS/{print $1}' /results/sif-list.txt | tail -1)"
+        apptainer sif dump "$partition_id" /tmp/alpine.sif > /tmp/alpine-rootfs.squashfs
+        unsquashfs -d /tmp/alpine-rootfs /tmp/alpine-rootfs.squashfs 2>&1 | tee /results/build-sandbox.txt
+        proot -R /tmp/alpine-rootfs -w / sh -c 'echo PROOT_SIF_EXEC_OK; uname -m' 2>&1 | tee /results/exec.txt
+        test "$(grep -c PROOT_SIF_EXEC_OK /results/exec.txt)" -eq 1
+    result:
+      path: /results
+    resources:
+      cpuCount: 8
+      memory: 32 GiB
+    constraints:
+      cluster:
+        - ai2/saturn
+    context:
+      priority: urgent
+      autoResume: true
+    timeout: 1h

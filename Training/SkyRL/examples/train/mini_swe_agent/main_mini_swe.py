@@ -13,12 +13,13 @@ MiniSWEConfig = make_config(generator_cls=MiniSWEGeneratorConfig)
 
 class MiniSWEPPOExp(BasePPOExp):
     def get_generator(self, cfg, tokenizer, inference_engine_client):
+        model_name = cfg.generator.inference_engine.served_model_name or self.cfg.trainer.policy.model.path
         generator = MiniSweAgentGenerator(
             generator_cfg=cfg.generator,
             skyrl_gym_cfg=SkyRLGymConfig(max_env_workers=0),
             inference_engine_client=inference_engine_client,
             tokenizer=tokenizer,
-            model_name=self.cfg.trainer.policy.model.path,
+            model_name=model_name,
         )
         return generator
 

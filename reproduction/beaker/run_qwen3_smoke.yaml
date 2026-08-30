@@ -1,0 +1,35 @@
+version: v2
+description: >-
+  One complete Qwen3-8B ContextAwareRL Agentic step on four GPUs: Mini-SWE
+  rollouts in official SIF contents, GRPO plus choose-trajectory loss, optimizer
+  update, and FSDP checkpoint.
+tasks:
+  - name: qwen3-agentic-smoke
+    image:
+      docker: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-devel
+    command:
+      - /bin/bash
+      - /input/run_qwen3_smoke.sh
+    envVars:
+      - name: HF_TOKEN
+        secret: HF_TOKEN
+      - name: WANDB_API_KEY
+        secret: SIJIAL_WANDB_API_KEY
+    datasets:
+      - mountPath: /input
+        source:
+          beaker: 01M16N561NQBZ4M8H9527MH6P3
+    result:
+      path: /results
+    resources:
+      cpuCount: 64
+      gpuCount: 4
+      memory: 800 GiB
+      sharedMemory: 64 GiB
+    constraints:
+      cluster:
+        - ai2/jupiter
+    context:
+      priority: urgent
+      autoResume: true
+    timeout: 8h

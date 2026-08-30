@@ -1,0 +1,30 @@
+version: v2
+description: >-
+  Prepare the Qwen3-8B base model and first official SWE-Gym SIF image for a
+  bounded ContextAwareRL Agentic training reproduction on Beaker.
+tasks:
+  - name: prepare-assets
+    image:
+      docker: ubuntu:24.04
+    command:
+      - /bin/bash
+      - /input/reproduction/beaker/prepare_qwen3_assets.sh
+    envVars:
+      - name: HF_TOKEN
+        secret: HF_TOKEN
+    datasets:
+      - mountPath: /input
+        source:
+          beaker: 01M16EF1K6H638GJP227J41W2Y
+    result:
+      path: /results
+    resources:
+      cpuCount: 16
+      memory: 128 GiB
+    constraints:
+      cluster:
+        - ai2/titan
+    context:
+      priority: urgent
+      autoResume: true
+    timeout: 4h
