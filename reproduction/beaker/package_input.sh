@@ -15,6 +15,9 @@ tar \
   -C "$repo_root" \
   Training/SkyRL data/ContextRL_Agentic
 cp "$script_dir/$launcher" "$output_dir/$launcher"
+if [[ "$launcher" == "run_qwen3_epoch.sh" ]]; then
+  cp "$script_dir/run_qwen3_fullcheck.sh" "$output_dir/run_qwen3_fullcheck.sh"
+fi
 
 if command -v sha256sum >/dev/null 2>&1; then
   sha256sum "$output_dir/source.tar.gz"

@@ -1,0 +1,56 @@
+version: v2
+description: >-
+  One full epoch over the 370-row released Qwen3-8B SWE-Gym dataset: 23
+  drop-last batches, eight rollouts per prompt, GRPO plus context-awareness
+  loss, optimizer updates, and verified four-rank FSDP checkpoints.
+tasks:
+  - name: qwen3-agentic-released-one-epoch
+    image:
+      docker: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-devel
+    command:
+      - /bin/bash
+      - /input/run_qwen3_fullcheck.sh
+    envVars:
+      - name: HF_TOKEN
+        secret: HF_TOKEN
+      - name: WANDB_API_KEY
+        secret: SIJIAL_WANDB_API_KEY
+      - name: MINISWE_TRAJECTORY_TIMEOUT_SECONDS
+        value: "3600"
+      - name: CONTEXTAWARE_OUTPUT_ROOT
+        value: /weka/nora-default/sijial/workspace/contextaware-rl/qwen3-8b-released-370-one-epoch
+      - name: CONTEXTAWARE_ASSET_ROOT
+        value: /weka/nora-default/sijial/workspace/contextaware-rl/assets/qwen3-8b-released-370
+      - name: CONTEXTAWARE_TRAIN_ROWS
+        value: "0"
+      - name: CONTEXTAWARE_TRAINING_EPOCHS
+        value: "1"
+      - name: CONTEXTAWARE_CKPT_INTERVAL
+        value: "10"
+      - name: CONTEXTAWARE_RESUME_MODE
+        value: latest
+      - name: CONTEXTAWARE_EXPECTED_TRAJECTORIES
+        value: "2944"
+      - name: CONTEXTAWARE_SUCCESS_MARKER
+        value: RELEASED_370_ROW_EPOCH_VERIFIED
+      - name: CONTEXTAWARE_RUN_LABEL
+        value: qwen3-8b-released-370-one-epoch
+    datasets:
+      - mountPath: /input
+        source:
+          beaker: 01M18VDCN836S0TCVK32SKA5N1
+      - mountPath: /weka/nora-default
+        source:
+          weka: nora-default
+    resources:
+      cpuCount: 64
+      gpuCount: 4
+      memory: 800 GiB
+      sharedMemory: 64 GiB
+    constraints:
+      cluster:
+        - ai2/jupiter
+    context:
+      priority: urgent
+      autoResume: true
+    timeout: 48h

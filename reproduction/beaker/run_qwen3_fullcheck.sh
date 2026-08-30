@@ -6,6 +6,16 @@ output_parent="${CONTEXTAWARE_OUTPUT_ROOT:-$weka_workspace/contextaware-rl/qwen3
 run_id="${BEAKER_EXPERIMENT_ID:-${BEAKER_JOB_ID:-$(date -u +%Y%m%dT%H%M%SZ)}}"
 output_dir="$output_parent/$run_id"
 checkpoint_root="$output_dir/checkpoints"
+assets_root="${CONTEXTAWARE_ASSET_ROOT:-/workspace/assets}"
+model_dir="$assets_root/Qwen3-8B"
+sif_dir="$assets_root/sifs"
+train_rows="${CONTEXTAWARE_TRAIN_ROWS:-16}"
+training_epochs="${CONTEXTAWARE_TRAINING_EPOCHS:-1}"
+ckpt_interval="${CONTEXTAWARE_CKPT_INTERVAL:-1}"
+resume_mode="${CONTEXTAWARE_RESUME_MODE:-none}"
+success_marker="${CONTEXTAWARE_SUCCESS_MARKER:-FULL_CONFIG_TRAINING_STEP_VERIFIED}"
+run_label="${CONTEXTAWARE_RUN_LABEL:-qwen3-8b-full-config-1-step}"
+export CONTEXTAWARE_TRAIN_ROWS="$train_rows"
 
 test -d "$weka_workspace"
 test -w "$weka_workspace"
@@ -15,10 +25,15 @@ mkdir -p \
   "$output_dir/logs" \
   "$output_dir/traj" \
   "$output_dir/wandb" \
-  /workspace/assets/sifs
+  "$model_dir" \
+  "$sif_dir"
 exec > >(tee -a "$output_dir/run.log") 2>&1
 printf 'WEKA_OUTPUT_DIR=%s\n' "$output_dir" | tee "$output_dir/OUTPUT_DIR.txt"
-cp /input/run_qwen3_fullcheck.sh "$output_dir/run_qwen3_fullcheck.sh"
+printf 'ASSET_DIR=%s\nTRAIN_ROWS=%s\nEPOCHS=%s\n' \
+  "$assets_root" "$train_rows" "$training_epochs" | tee "$output_dir/RUN_CONFIG.txt"
+for launcher in /input/run_qwen3*.sh; do
+  cp "$launcher" "$output_dir/$(basename "$launcher")"
+done
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
@@ -32,20 +47,29 @@ export PATH="/root/.local/bin:$PATH"
 
 tar -xzf /input/source.tar.gz -C /workspace
 cd /workspace/Training/SkyRL
-uvx --from huggingface-hub==0.36.2 hf download Qwen/Qwen3-8B \
-  --local-dir /workspace/assets/Qwen3-8B
+export HF_HOME=/tmp/huggingface-cache
+model_shard_count="$(find "$model_dir" -maxdepth 1 -type f -name 'model-*-of-*.safetensors' | wc -l)"
+if ! test -s "$model_dir/config.json" || ! test -s "$model_dir/model.safetensors.index.json" || test "$model_shard_count" -ne 5; then
+  uvx --from huggingface-hub==0.36.2 hf download Qwen/Qwen3-8B \
+    --local-dir "$model_dir"
+fi
 uv sync --python 3.12 --extra fsdp --extra miniswe
 
 .venv/bin/python - <<'PY'
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
 
 source_path = Path('/workspace/data/ContextRL_Agentic/swe_gym_train.parquet')
 source = pd.read_parquet(source_path)
-train = source.iloc[:16].copy()
-validation = source.iloc[16:32].copy()
+requested_rows = int(os.environ['CONTEXTAWARE_TRAIN_ROWS'])
+train = source.copy() if requested_rows <= 0 else source.iloc[:requested_rows].copy()
+validation_start = min(len(train), max(0, len(source) - 16))
+validation = source.iloc[validation_start:validation_start + 16].copy()
+assert len(train) >= 16
+assert len(validation) > 0
 train.to_parquet('/workspace/data/train_fullcheck.parquet', index=False)
 validation.to_parquet('/workspace/data/validation_fullcheck.parquet', index=False)
 
@@ -67,21 +91,29 @@ print('FULLCHECK_TRAIN_IDS', [
     (json.loads(value) if isinstance(value, str) else value)['instance_id']
     for value in train['instance']
 ])
+print('FULLCHECK_TRAIN_ROWS', len(train), 'FULLCHECK_UNIQUE_IMAGES', len(manifest))
 PY
 
+export APPTAINER_CACHEDIR=/tmp/apptainer-cache
+mkdir -p "$APPTAINER_CACHEDIR"
 while IFS=$'\t' read -r sif_name image_name instance_id; do
+  if test -s "$sif_dir/$sif_name"; then
+    printf 'SKIPPING_EXISTING_SIF %s %s\n' "$instance_id" "$sif_dir/$sif_name"
+    continue
+  fi
   printf 'PULLING_SIF %s %s\n' "$instance_id" "$image_name"
   apptainer pull \
-    "/workspace/assets/sifs/$sif_name" \
+    "$sif_dir/$sif_name" \
     "docker://$image_name"
 done < /workspace/data/sif_manifest.tsv
-sha256sum /workspace/assets/sifs/*.sif | tee "$output_dir/SIF_SHA256SUMS"
+test "$(find "$sif_dir" -maxdepth 1 -type f -name '*.sif' | wc -l)" -ge "$(wc -l < /workspace/data/sif_manifest.tsv)"
+sha256sum "$sif_dir"/*.sif | tee "$output_dir/SIF_SHA256SUMS"
 
 cp examples/train/mini_swe_agent/swebench.yaml /workspace/data/swebench-proot-fullcheck.yaml
 sed -i 's/environment_class: singularity/environment_class: proot_sif/' /workspace/data/swebench-proot-fullcheck.yaml
 sed -i 's/executable: apptainer/executable: proot/' /workspace/data/swebench-proot-fullcheck.yaml
-sed -i 's|/path/to/swe_gym_images|/workspace/assets/sifs|' /workspace/data/swebench-proot-fullcheck.yaml
-sed -i 's|/path/to/swe_smith_images|/workspace/assets/sifs|' /workspace/data/swebench-proot-fullcheck.yaml
+sed -i "s|/path/to/swe_gym_images|$sif_dir|" /workspace/data/swebench-proot-fullcheck.yaml
+sed -i "s|/path/to/swe_smith_images|$sif_dir|" /workspace/data/swebench-proot-fullcheck.yaml
 
 export PYTHONPATH="$PWD"
 .venv/bin/python - <<'PY'
@@ -140,7 +172,7 @@ export UV_OFFLINE=true
   trainer.algorithm.choose_trajectory_clip=5.0 \
   trainer.algorithm.choose_trajectory_prefill='""' \
   trainer.algorithm.choose_trajectory_enable_thinking=false \
-  trainer.policy.model.path="/workspace/assets/Qwen3-8B" \
+  trainer.policy.model.path="$model_dir" \
   trainer.placement.colocate_all=true \
   trainer.strategy=fsdp2 \
   trainer.placement.policy_num_gpus_per_node=4 \
@@ -151,7 +183,7 @@ export UV_OFFLINE=true
   generator.inference_engine.num_engines=2 \
   generator.inference_engine.tensor_parallel_size=2 \
   generator.inference_engine.served_model_name="Qwen/Qwen3-8B" \
-  trainer.epochs=1 \
+  trainer.epochs="$training_epochs" \
   trainer.eval_batch_size=100 \
   trainer.eval_before_train=false \
   trainer.eval_interval=0 \
@@ -161,7 +193,7 @@ export UV_OFFLINE=true
   trainer.micro_forward_batch_size_per_gpu=1 \
   trainer.micro_train_batch_size_per_gpu=1 \
   trainer.dump_data_batch=true \
-  trainer.ckpt_interval=1 \
+  trainer.ckpt_interval="$ckpt_interval" \
   trainer.max_prompt_length=4096 \
   generator.sampling_params.max_generate_length=4096 \
   generator.max_input_length=28672 \
@@ -182,8 +214,8 @@ export UV_OFFLINE=true
   generator.inference_engine.gpu_memory_utilization=0.7 \
   trainer.logger="wandb" \
   trainer.project_name="ContextAwareRL-reproduction" \
-  trainer.run_name="qwen3-8b-full-config-1-step-$run_id" \
-  trainer.resume_mode=none \
+  trainer.run_name="$run_label-$run_id" \
+  trainer.resume_mode="$resume_mode" \
   trainer.ckpt_path="$checkpoint_root" \
   trainer.export_path="$output_dir/exports" \
   trainer.log_path="$output_dir/logs" \
@@ -194,6 +226,10 @@ checkpoint_dir="$(find "$checkpoint_root" -maxdepth 1 -type d -name 'global_step
 test -n "$checkpoint_dir"
 test "$(find "$checkpoint_dir/policy" -maxdepth 1 -name 'model_world_size_4_rank_*.pt' | wc -l)" -eq 4
 test "$(find "$checkpoint_dir/policy" -maxdepth 1 -name 'optim_world_size_4_rank_*.pt' | wc -l)" -eq 4
+trajectory_count="$(find "$output_dir/traj" -type f -name '*.json' | wc -l)"
+if test -n "${CONTEXTAWARE_EXPECTED_TRAJECTORIES:-}"; then
+  test "$trajectory_count" -eq "$CONTEXTAWARE_EXPECTED_TRAJECTORIES"
+fi
 find "$checkpoint_dir" -maxdepth 3 -type f -print | sort | tee "$output_dir/checkpoint-files.txt"
 du -sh "$checkpoint_dir" | tee "$output_dir/checkpoint-size.txt"
-printf 'FULL_CONFIG_TRAINING_STEP_VERIFIED %s\n' "$checkpoint_dir" | tee "$output_dir/SUCCESS"
+printf '%s checkpoint=%s trajectories=%s\n' "$success_marker" "$checkpoint_dir" "$trajectory_count" | tee "$output_dir/SUCCESS"

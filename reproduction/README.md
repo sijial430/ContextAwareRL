@@ -64,6 +64,26 @@ input tokens plus a 4,096-token request exceeds the 40,960-token model limit
 by one); the upstream generator catches and persists these episodes instead of
 aborting the batch.
 
+## Released-dataset one-epoch run
+
+The one-epoch launcher uses all 370 rows in the released Qwen3 SWE-Gym
+parquet. SkyRL's training dataloader uses `drop_last=true`, so batch size 16
+produces 23 optimizer updates over 368 prompts and 2,944 rollout trajectories.
+This is one complete epoch of the public release, not one epoch of the paper's
+stated 7,000-task training set.
+
+- Beaker experiment: [01M18VJN91WPG79414V4V1KR08](https://beaker.org/ex/01M18VJN91WPG79414V4V1KR08)
+- Hardware: four GPUs on `ai2/jupiter`
+- Checkpoints: every 10 updates plus the epoch-end checkpoint
+- Resume mode: latest checkpoint
+
+Durable run output and reusable model/SIF assets are restricted to:
+
+```text
+/weka/nora-default/sijial/workspace/contextaware-rl/qwen3-8b-released-370-one-epoch/01M18VJN91WPG79414V4V1KR08/
+/weka/nora-default/sijial/workspace/contextaware-rl/assets/qwen3-8b-released-370/
+```
+
 ## Compact pipeline smoke run
 
 - Upstream revision: `0683df934b7c2698fb97df5a478664e1b310db2f`
@@ -136,6 +156,14 @@ The compact smoke run remains available with:
 beaker experiment create reproduction/beaker/run_qwen3_smoke.yaml \
   --workspace ai2/autodiscovery \
   --name contextaware-qwen3-smoke
+```
+
+The complete released-data epoch can be submitted with:
+
+```bash
+beaker experiment create reproduction/beaker/run_qwen3_epoch.yaml \
+  --workspace ai2/autodiscovery \
+  --name contextaware-qwen3-released-370-one-epoch
 ```
 
 To package a new code/data snapshot, create and upload a replacement input
